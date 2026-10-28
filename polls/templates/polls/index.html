@@ -1,0 +1,101 @@
+{% extends "polls/base.html" %}
+
+{% block title %}Explore Polls | PollMaster{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 class="page-title">Community Polls</h1>
+    <p class="page-subtitle">Cast your vote, explore live opinions, or create your own question.</p>
+  </div>
+  <a href="{% url 'polls:create' %}" class="btn btn-primary">
+    + Create a Poll
+  </a>
+</div>
+
+<!-- Search & Status Filter Bar -->
+<div class="filter-bar">
+  <form method="get" action="{% url 'polls:index' %}" class="search-form">
+    <input 
+      type="text" 
+      name="q" 
+      class="search-input" 
+      placeholder="Search polls by keywords..." 
+      value="{{ search_query }}"
+    >
+    {% if current_status != "all" %}
+      <input type="hidden" name="status" value="{{ current_status }}">
+    {% endif %}
+    <button type="submit" class="btn btn-secondary" style="padding: 0.65rem 1rem;">Search</button>
+  </form>
+
+  <div class="filter-pills">
+    <a href="{% url 'polls:index' %}{% if search_query %}?q={{ search_query }}{% endif %}" class="filter-pill {% if current_status == 'all' %}active{% endif %}">
+      All ({{ total_polls_count }})
+    </a>
+    <a href="{% url 'polls:index' %}?status=active{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-pill {% if current_status == 'active' %}active{% endif %}">
+      Active
+    </a>
+    <a href="{% url 'polls:index' %}?status=closed{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-pill {% if current_status == 'closed' %}active{% endif %}">
+      Closed
+    </a>
+  </div>
+</div>
+
+{% if latest_question_list %}
+  <ul class="poll-list">
+    {% for question in latest_question_list %}
+      <li class="poll-item">
+        <div style="flex: 1; padding-right: 1.5rem;">
+          <a href="{% url 'polls:detail' question.id %}" class="poll-item-title">
+            {{ question.question_text }}
+          </a>
+          <div class="poll-meta">
+            <span>Published {{ question.pub_date|date:"M d, Y" }}</span>
+            <span>&bull;</span>
+            <span>{{ question.choices.count }} choices</span>
+            <span>&bull;</span>
+            <span><strong>{{ question.total_votes }}</strong> vote{{ question.total_votes|pluralize }}</span>
+            {% if question.was_published_recently %}
+              <span class="badge badge-recent">New</span>
+            {% endif %}
+            {% if question.is_active %}
+              <span class="badge badge-active">Open</span>
+            {% else %}
+              <span class="badge badge-closed">Closed</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          {% if question.is_active %}
+            <a href="{% url 'polls:detail' question.id %}" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+              Vote
+            </a>
+          {% endif %}
+          <a href="{% url 'polls:results' question.id %}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+            Results
+          </a>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
+    <h3>No polls match your criteria.</h3>
+    <p style="color: var(--text-muted); margin-top: 0.5rem;">
+      {% if search_query %}
+        No results for "{{ search_query }}". Try clearing your search or create a new poll!
+      {% else %}
+        No polls available right now. Start the conversation by creating the first one!
+      {% endif %}
+    </p>
+    <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;">
+      {% if search_query %}
+        <a href="{% url 'polls:index' %}" class="btn btn-secondary">Clear Filter</a>
+      {% endif %}
+      <a href="{% url 'polls:create' %}" class="btn btn-primary">+ Create New Poll</a>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

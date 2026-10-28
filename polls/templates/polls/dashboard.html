@@ -1,0 +1,82 @@
+{% extends "polls/base.html" %}
+
+{% block title %}Analytics & Community Dashboard | PollMaster{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Community Analytics &amp; Leaderboard</h1>
+  <p class="page-subtitle">Real-time voting activity, aggregate metrics, and community trends.</p>
+</div>
+
+<!-- Metrics Cards -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-number">{{ total_questions }}</div>
+    <div class="stat-label">Total Polls Created</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number">{{ active_questions }}</div>
+    <div class="stat-label">Currently Open for Voting</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number">{{ total_votes }}</div>
+    <div class="stat-label">Total Votes Cast</div>
+  </div>
+</div>
+
+<!-- Top Choices Leaderboard -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h2 style="font-size: 1.35rem; font-weight: 700; color: #111827;">🏆 Top Choices Across All Polls</h2>
+      <p style="font-size: 0.875rem; color: var(--text-muted);">The options that have gathered the most community votes.</p>
+    </div>
+  </div>
+
+  <div class="results-container">
+    {% for choice in top_choices %}
+      <div class="result-row" style="margin-bottom: 1.25rem;">
+        <div class="result-info">
+          <div>
+            <span style="font-weight: 600; color: #111827;">#{{ forloop.counter }} {{ choice.choice_text }}</span>
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal; margin-top: 0.15rem;">
+              from: <a href="{% url 'polls:detail' choice.question.id %}" style="color: var(--primary); text-decoration: none;">{{ choice.question.question_text }}</a>
+            </div>
+          </div>
+          <div>
+            <strong style="color: var(--primary);">{{ choice.votes }}</strong> votes
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p style="color: var(--text-muted); font-style: italic;">No votes recorded yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Recent Polls Quick View -->
+<div class="card">
+  <h2 style="font-size: 1.35rem; font-weight: 700; color: #111827; margin-bottom: 1rem;">Recent Poll Highlights</h2>
+  <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+    {% for poll in recent_polls %}
+      <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+        <div>
+          <a href="{% url 'polls:detail' poll.id %}" style="font-weight: 600; color: #1f2937; text-decoration: none;">
+            {{ poll.question_text }}
+          </a>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            {{ poll.total_votes }} votes &bull; {{ poll.choices.count }} options
+          </div>
+        </div>
+        <a href="{% url 'polls:results' poll.id %}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+          View Results
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <div style="margin-top: 1.5rem; text-align: center;">
+    <a href="{% url 'polls:create' %}" class="btn btn-primary">+ Create Your Own Poll</a>
+  </div>
+</div>
+{% endblock %}

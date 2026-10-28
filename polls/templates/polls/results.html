@@ -1,0 +1,59 @@
+{% extends "polls/base.html" %}
+
+{% block title %}Results: {{ question.question_text }} | PollMaster{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{% url 'polls:index' %}" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+      &larr; Back to all polls
+    </a>
+  </div>
+
+  <h1 class="page-title" style="margin-bottom: 0.5rem;">{{ question.question_text }}</h1>
+  <p class="poll-meta" style="margin-bottom: 2rem;">
+    Total Votes Cast: <strong>{{ question.total_votes }}</strong> &bull;
+    Status: 
+    {% if question.is_active %}
+      <span class="badge badge-active">Active</span>
+    {% else %}
+      <span class="badge badge-closed">Closed</span>
+    {% endif %}
+  </p>
+
+  <div class="results-container">
+    {% for choice in question.choices.all %}
+      <div class="result-row">
+        <div class="result-info">
+          <span>{{ choice.choice_text }}</span>
+          <span>
+            <strong>{{ choice.votes }}</strong> vote{{ choice.votes|pluralize }} 
+            <span style="color: var(--text-muted); font-size: 0.9rem;">({{ choice.percentage }}%)</span>
+          </span>
+        </div>
+        <div class="result-bar-bg">
+          <div 
+            class="result-bar-fill" 
+            style="width: {% if choice.percentage > 0 %}{{ choice.percentage }}%{% else %}2%{% endif %};"
+          >
+            {% if choice.percentage >= 10 %}{{ choice.percentage }}%{% endif %}
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p style="color: var(--text-muted); font-style: italic;">No choices are available for this question.</p>
+    {% endfor %}
+  </div>
+
+  <div class="actions-group">
+    {% if question.is_active %}
+      <a href="{% url 'polls:detail' question.id %}" class="btn btn-primary">
+        Vote Again / Change Vote
+      </a>
+    {% endif %}
+    <a href="{% url 'polls:index' %}" class="btn btn-secondary">
+      Return to Polls List
+    </a>
+  </div>
+</div>
+{% endblock %}

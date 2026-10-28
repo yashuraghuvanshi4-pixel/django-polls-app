@@ -1,0 +1,94 @@
+{% extends "polls/base.html" %}
+
+{% block title %}Create a New Poll | PollMaster{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 680px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{% url 'polls:index' %}" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+      &larr; Back to polls
+    </a>
+  </div>
+
+  <h1 class="page-title" style="margin-bottom: 0.5rem;">Create a New Poll</h1>
+  <p class="page-subtitle" style="margin-bottom: 2rem;">
+    Publish a question and give your community choices to vote on.
+  </p>
+
+  {% if form.errors %}
+    <div class="alert alert-error">
+      <strong>Please fix the errors below:</strong>
+      <ul style="margin-left: 1.25rem; margin-top: 0.25rem;">
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li>{{ field.label }}: {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'polls:create' %}">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.question_text.id_for_label }}">
+        {{ form.question_text.label }} <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.question_text }}
+      <p class="form-help">{{ form.question_text.help_text }}</p>
+    </div>
+
+    <div style="margin: 2rem 0 1rem;">
+      <h3 style="font-size: 1.15rem; font-weight: 700; color: #111827; margin-bottom: 0.25rem;">Poll Options</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Provide at least 2 distinct choices (up to 5 options).
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">{{ form.choice_1.label }} <span style="color: var(--danger);">*</span></label>
+        {{ form.choice_1 }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ form.choice_2.label }} <span style="color: var(--danger);">*</span></label>
+        {{ form.choice_2 }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ form.choice_3.label }}</label>
+        {{ form.choice_3 }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ form.choice_4.label }}</label>
+        {{ form.choice_4 }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ form.choice_5.label }}</label>
+        {{ form.choice_5 }}
+      </div>
+    </div>
+
+    <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+      {{ form.is_active }}
+      <label for="{{ form.is_active.id_for_label }}" style="font-weight: 500; cursor: pointer; user-select: none;">
+        {{ form.is_active.label }}
+      </label>
+    </div>
+
+    <div class="actions-group">
+      <button type="submit" class="btn btn-primary" style="flex: 1;">
+        Publish Poll
+      </button>
+      <a href="{% url 'polls:index' %}" class="btn btn-secondary">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "polls/base.html" %}
+
+{% block title %}{{ question.question_text }} | Vote{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{% url 'polls:index' %}" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+      &larr; Back to all polls
+    </a>
+  </div>
+
+  <h1 class="page-title" style="margin-bottom: 0.5rem;">{{ question.question_text }}</h1>
+  <p class="poll-meta" style="margin-bottom: 1.5rem;">
+    Published on {{ question.pub_date|date:"F j, Y, g:i a" }}
+    {% if question.is_active %}
+      <span class="badge badge-active">Open for Voting</span>
+    {% else %}
+      <span class="badge badge-closed">Closed</span>
+    {% endif %}
+  </p>
+
+  {% if error_message %}
+    <div class="alert alert-error">
+      <strong>Attention:</strong>
+      {% if error_message|length > 1 %}
+        <ul style="margin-left: 1.25rem; margin-top: 0.25rem;">
+          {% for err in error_message %}
+            <li>{{ err }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <span>{{ error_message|first }}</span>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if question.is_active %}
+    <!-- Form with CSRF Protection -->
+    <form action="{% url 'polls:vote' question.id %}" method="post">
+      {% csrf_token %}
+
+      <div class="choices-list">
+        {% for choice in question.choices.all %}
+          <div class="choice-option">
+            <input 
+              type="radio" 
+              name="choice" 
+              id="choice{{ forloop.counter }}" 
+              value="{{ choice.id }}"
+              {% if form.choice.value|stringformat:"s" == choice.id|stringformat:"s" %}checked{% endif %}
+              required
+            >
+            <label for="choice{{ forloop.counter }}">
+              {{ choice.choice_text }}
+            </label>
+          </div>
+        {% empty %}
+          <p style="color: var(--text-muted); font-style: italic;">
+            No choices have been added for this question yet.
+          </p>
+        {% endfor %}
+      </div>
+
+      {% if question.choices.count > 0 %}
+        <div class="actions-group">
+          <button type="submit" class="btn btn-primary">
+            Submit Vote
+          </button>
+          <a href="{% url 'polls:results' question.id %}" class="btn btn-secondary">
+            View Live Results
+          </a>
+        </div>
+      {% endif %}
+    </form>
+  {% else %}
+    <div class="alert alert-info">
+      This poll is closed. New votes can no longer be recorded.
+    </div>
+    <div class="actions-group">
+      <a href="{% url 'polls:results' question.id %}" class="btn btn-primary">
+        View Final Results
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

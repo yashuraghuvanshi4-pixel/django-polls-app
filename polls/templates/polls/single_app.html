@@ -1,0 +1,779 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PollMaster | Unified Polling & Voting Web App</title>
+  <link rel="stylesheet" href="{% static 'polls/css/style.css' %}">
+  <style>
+    /* Single Web Application specific styles */
+    .app-header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      margin-left: 0.75rem;
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0.55rem 0.95rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .tab-btn:hover {
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      background: var(--primary-light);
+      font-weight: 700;
+    }
+    .tab-btn.cta-tab {
+      background: var(--primary);
+      color: white;
+    }
+    .tab-btn.cta-tab:hover {
+      background: var(--primary-hover);
+      color: white;
+    }
+    .tab-btn.cta-tab.active {
+      background: var(--primary-hover);
+      color: white;
+      box-shadow: 0 0 0 2px #a5b4fc;
+    }
+    .app-toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #111827;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      box-shadow: var(--shadow-lg);
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      z-index: 999;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .active-poll-badge {
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      background: #eef2ff;
+      color: var(--primary);
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Single Application Header & Navigation Bar -->
+  <header class="navbar">
+    <div style="display: flex; align-items: center;">
+      <a href="#explore" onclick="switchTab('explore')" class="navbar-brand">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 20V10"/>
+          <path d="M12 20V4"/>
+          <path d="M6 20v-6"/>
+        </svg>
+        PollMaster
+      </a>
+      <div class="app-header-badge">
+        <span class="pulse-dot"></span> Single Web App
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="navbar-nav">
+      <button class="tab-btn active" id="tab-nav-explore" onclick="switchTab('explore')">
+        📋 Explore Polls
+      </button>
+      <button class="tab-btn" id="tab-nav-vote" onclick="switchTab('vote')">
+        🗳️ Vote
+      </button>
+      <button class="tab-btn" id="tab-nav-results" onclick="switchTab('results')">
+        📊 Live Results
+      </button>
+      <button class="tab-btn cta-tab" id="tab-nav-create" onclick="switchTab('create')">
+        ➕ New Poll
+      </button>
+      <button class="tab-btn" id="tab-nav-analytics" onclick="switchTab('analytics')">
+        📈 Analytics
+      </button>
+      <a href="{% url 'admin:index' %}" class="tab-btn" target="_blank" rel="noopener">
+        ⚙️ Admin &rarr;
+      </a>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <!-- Global Toast Notification -->
+    <div id="app-toast" class="app-toast">
+      <span id="toast-message">Notification</span>
+    </div>
+
+    <!-- TAB 1: EXPLORE POLLS -->
+    <section id="tab-explore" class="tab-content active">
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 class="page-title">Community Polls</h1>
+          <p class="page-subtitle">Cast your vote, explore live opinions, or create your own question.</p>
+        </div>
+        <button onclick="switchTab('create')" class="btn btn-primary">
+          + Create a Poll
+        </button>
+      </div>
+
+      <!-- Live Search & Filter Bar -->
+      <div class="filter-bar">
+        <div class="search-form" style="max-width: 420px;">
+          <input 
+            type="text" 
+            id="poll-search-input" 
+            class="search-input" 
+            placeholder="Search polls in real-time..." 
+            oninput="filterPolls()"
+          >
+        </div>
+        <div class="filter-pills">
+          <button class="filter-pill active" id="filter-all" onclick="setStatusFilter('all')">All</button>
+          <button class="filter-pill" id="filter-active" onclick="setStatusFilter('active')">Active</button>
+          <button class="filter-pill" id="filter-closed" onclick="setStatusFilter('closed')">Closed</button>
+        </div>
+      </div>
+
+      <!-- Polls List Container -->
+      <ul class="poll-list" id="polls-list-container">
+        {% for question in questions %}
+          <li class="poll-item" data-question-id="{{ question.id }}" data-status="{% if question.is_active %}active{% else %}closed{% endif %}" data-text="{{ question.question_text|lower }}">
+            <div style="flex: 1; padding-right: 1.5rem;">
+              <a href="javascript:void(0)" onclick="loadAndVotePoll({{ question.id }})" class="poll-item-title">
+                {{ question.question_text }}
+              </a>
+              <div class="poll-meta">
+                <span>Published {{ question.pub_date|date:"M d, Y" }}</span>
+                <span>&bull;</span>
+                <span>{{ question.choices.count }} choices</span>
+                <span>&bull;</span>
+                <span><strong class="vote-count-badge">{{ question.total_votes }}</strong> total votes</span>
+                {% if question.was_published_recently %}
+                  <span class="badge badge-recent">New</span>
+                {% endif %}
+                {% if question.is_active %}
+                  <span class="badge badge-active">Open</span>
+                {% else %}
+                  <span class="badge badge-closed">Closed</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              {% if question.is_active %}
+                <button onclick="loadAndVotePoll({{ question.id }})" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                  Vote
+                </button>
+              {% endif %}
+              <button onclick="loadAndShowResults({{ question.id }})" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                Results
+              </button>
+            </div>
+          </li>
+        {% empty %}
+          <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
+            <h3>No polls match your criteria.</h3>
+            <p style="color: var(--text-muted); margin-top: 0.5rem;">Click 'New Poll' above to create the very first community question!</p>
+          </div>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <!-- TAB 2: VOTE ON POLL -->
+    <section id="tab-vote" class="tab-content">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <button onclick="switchTab('explore')" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+            &larr; Back to all polls
+          </button>
+          <div id="vote-poll-status-badge"></div>
+        </div>
+
+        <h1 class="page-title" id="voting-question-title" style="margin-bottom: 0.35rem;">Select a Poll to Vote</h1>
+        <p class="poll-meta" id="voting-question-meta" style="margin-bottom: 1.5rem;">Loading options...</p>
+
+        <div id="vote-error-box" class="alert alert-error" style="display: none;"></div>
+
+        <form id="single-app-vote-form" onsubmit="submitVote(event)">
+          {% csrf_token %}
+          <input type="hidden" id="voting-poll-id" value="">
+          <div class="choices-list" id="voting-choices-container">
+            <!-- Dynamically populated choices -->
+          </div>
+
+          <div class="actions-group" id="voting-actions-group">
+            <button type="submit" id="btn-submit-vote" class="btn btn-primary">
+              Cast Vote Now
+            </button>
+            <button type="button" id="btn-view-poll-results" class="btn btn-secondary" onclick="viewCurrentPollResults()">
+              View Live Results
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 3: LIVE RESULTS -->
+    <section id="tab-results" class="tab-content">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+          <button onclick="switchTab('explore')" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+            &larr; Back to all polls
+          </button>
+          <button onclick="refreshCurrentResults()" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+            ↻ Refresh Data
+          </button>
+        </div>
+
+        <h1 class="page-title" id="results-question-title" style="margin-bottom: 0.35rem;">Poll Results</h1>
+        <p class="poll-meta" id="results-question-meta" style="margin-bottom: 2rem;">Total votes...</p>
+
+        <div class="results-container" id="results-bars-container">
+          <!-- Dynamically populated progress bars -->
+        </div>
+
+        <div class="actions-group" style="margin-top: 2rem;">
+          <button id="btn-vote-again" class="btn btn-primary" onclick="voteAgainFromResults()">
+            Vote on this Poll
+          </button>
+          <button class="btn btn-secondary" onclick="switchTab('explore')">
+            Explore Other Polls
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: CREATE POLL -->
+    <section id="tab-create" class="tab-content">
+      <div class="card" style="max-width: 680px; margin: 0 auto;">
+        <div style="margin-bottom: 1rem;">
+          <button onclick="switchTab('explore')" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+            &larr; Cancel and return
+          </button>
+        </div>
+
+        <h1 class="page-title" style="margin-bottom: 0.5rem;">Create a New Poll</h1>
+        <p class="page-subtitle" style="margin-bottom: 2rem;">
+          Ask your audience a question and provide choices for them to vote on.
+        </p>
+
+        <div id="create-error-box" class="alert alert-error" style="display: none;"></div>
+
+        <form id="single-app-create-form" onsubmit="submitNewPoll(event)">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label" for="new-question-text">Poll Question <span style="color: var(--danger);">*</span></label>
+            <input type="text" id="new-question-text" class="form-input" placeholder="e.g., Which AI framework do you find most productive?" required autocomplete="off">
+          </div>
+
+          <div style="margin: 1.5rem 0;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: #111827; margin-bottom: 0.25rem;">Choices</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Provide at least 2 distinct choices (up to 5 options).
+            </p>
+
+            <div class="form-group">
+              <label class="form-label">Option 1 <span style="color: var(--danger);">*</span></label>
+              <input type="text" id="new-choice-1" class="form-input" placeholder="First option (Required)" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Option 2 <span style="color: var(--danger);">*</span></label>
+              <input type="text" id="new-choice-2" class="form-input" placeholder="Second option (Required)" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Option 3 (Optional)</label>
+              <input type="text" id="new-choice-3" class="form-input" placeholder="Third option">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Option 4 (Optional)</label>
+              <input type="text" id="new-choice-4" class="form-input" placeholder="Fourth option">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Option 5 (Optional)</label>
+              <input type="text" id="new-choice-5" class="form-input" placeholder="Fifth option">
+            </div>
+          </div>
+
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+            <input type="checkbox" id="new-is-active" class="form-check-input" checked>
+            <label for="new-is-active" style="font-weight: 500; cursor: pointer; user-select: none;">
+              Open poll immediately for voting
+            </label>
+          </div>
+
+          <div class="actions-group">
+            <button type="submit" id="btn-publish-poll" class="btn btn-primary" style="flex: 1;">
+              Publish Poll Now
+            </button>
+            <button type="button" onclick="switchTab('explore')" class="btn btn-secondary">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 5: ANALYTICS & LEADERBOARD -->
+    <section id="tab-analytics" class="tab-content">
+      <div class="page-header">
+        <h1 class="page-title">Community Analytics &amp; Leaderboard</h1>
+        <p class="page-subtitle">Aggregated voting activity, participation statistics, and top choices.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" id="stats-total-polls">{{ total_questions }}</div>
+          <div class="stat-label">Total Polls Created</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="stats-active-polls">{{ active_questions }}</div>
+          <div class="stat-label">Active &amp; Open Polls</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="stats-total-votes">{{ total_votes }}</div>
+          <div class="stat-label">Total Votes Cast</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="font-size: 1.35rem; font-weight: 700; color: #111827; margin-bottom: 0.25rem;">
+          🏆 Top Choices Across All Polls
+        </h2>
+        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+          The options that have received the highest number of community votes.
+        </p>
+
+        <div class="results-container">
+          {% for choice in top_choices %}
+            <div class="result-row" style="margin-bottom: 1.25rem;">
+              <div class="result-info">
+                <div>
+                  <span style="font-weight: 600; color: #111827;">#{{ forloop.counter }} {{ choice.choice_text }}</span>
+                  <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal; margin-top: 0.15rem;">
+                    from poll: <a href="javascript:void(0)" onclick="loadAndVotePoll({{ choice.question.id }})" style="color: var(--primary); text-decoration: none;">{{ choice.question.question_text }}</a>
+                  </div>
+                </div>
+                <div>
+                  <strong style="color: var(--primary); font-size: 1.1rem;">{{ choice.votes }}</strong> votes
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <p style="color: var(--text-muted); font-style: italic;">No votes recorded yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- App Footer -->
+  <footer>
+    <p>
+      <strong>PollMaster Single Web Application</strong> &bull; Powered by Django MVT Architecture &amp; REST APIs &bull; 
+      <a href="{% url 'admin:index' %}" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: none;">Django Admin Dashboard</a>
+    </p>
+  </footer>
+
+  <!-- Single Web Application Client Logic -->
+  <script>
+    // State
+    let currentPollId = null;
+    let cachedPollData = null;
+    let statusFilter = 'all';
+
+    // Helper: Get CSRF Token from cookie or input
+    function getCSRFToken() {
+      const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+      if (csrfInput) return csrfInput.value;
+      const match = document.cookie.match(/csrftoken=([^;]+)/);
+      return match ? match[1] : '';
+    }
+
+    // Helper: Show Toast Message
+    function showToast(msg) {
+      const toast = document.getElementById('app-toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.textContent = msg;
+      toast.style.display = 'flex';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3500);
+    }
+
+    // Tab Switching
+    function switchTab(tabName) {
+      const tabs = ['explore', 'vote', 'results', 'create', 'analytics'];
+      tabs.forEach(t => {
+        const sec = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-nav-${t}`);
+        if (sec) sec.classList.toggle('active', t === tabName);
+        if (btn) btn.classList.toggle('active', t === tabName);
+      });
+      window.location.hash = `#${tabName}`;
+    }
+
+    // Filtering Polls
+    function setStatusFilter(status) {
+      statusFilter = status;
+      ['all', 'active', 'closed'].forEach(s => {
+        const pill = document.getElementById(`filter-${s}`);
+        if (pill) pill.classList.toggle('active', s === status);
+      });
+      filterPolls();
+    }
+
+    function filterPolls() {
+      const query = (document.getElementById('poll-search-input').value || '').toLowerCase().trim();
+      const items = document.querySelectorAll('#polls-list-container .poll-item');
+      items.forEach(item => {
+        const text = item.getAttribute('data-text') || '';
+        const itemStatus = item.getAttribute('data-status') || '';
+        const matchesQuery = !query || text.includes(query);
+        const matchesStatus = statusFilter === 'all' || itemStatus === statusFilter;
+        item.style.display = (matchesQuery && matchesStatus) ? 'flex' : 'none';
+      });
+    }
+
+    // Load Poll for Voting
+    async function loadAndVotePoll(pollId) {
+      currentPollId = pollId;
+      switchTab('vote');
+      
+      const titleEl = document.getElementById('voting-question-title');
+      const metaEl = document.getElementById('voting-question-meta');
+      const containerEl = document.getElementById('voting-choices-container');
+      const errBox = document.getElementById('vote-error-box');
+      const badgeEl = document.getElementById('vote-poll-status-badge');
+      const submitBtn = document.getElementById('btn-submit-vote');
+
+      errBox.style.display = 'none';
+      titleEl.textContent = "Loading question details...";
+      metaEl.textContent = "";
+      containerEl.innerHTML = "<p style='color: var(--text-muted);'>Fetching choices...</p>";
+
+      try {
+        const res = await fetch(`/polls/api/polls/${pollId}/`);
+        if (!res.ok) throw new Error("Could not load poll details.");
+        const poll = await res.json();
+        cachedPollData = poll;
+
+        titleEl.textContent = poll.question_text;
+        metaEl.textContent = `Published on ${poll.pub_date} • ${poll.total_votes} total votes cast`;
+        document.getElementById('voting-poll-id').value = poll.id;
+
+        badgeEl.innerHTML = poll.is_active 
+          ? '<span class="badge badge-active">Open for Voting</span>' 
+          : '<span class="badge badge-closed">Closed</span>';
+
+        submitBtn.style.display = poll.is_active ? 'inline-flex' : 'none';
+
+        if (poll.choices.length === 0) {
+          containerEl.innerHTML = "<p style='color: var(--text-muted);'>No choices added yet.</p>";
+          return;
+        }
+
+        let html = '';
+        poll.choices.forEach((choice, idx) => {
+          html += `
+            <div class="choice-option">
+              <input type="radio" name="choice" id="choice_opt_${choice.id}" value="${choice.id}" required>
+              <label for="choice_opt_${choice.id}">${choice.text}</label>
+            </div>
+          `;
+        });
+        containerEl.innerHTML = html;
+      } catch (err) {
+        titleEl.textContent = "Error loading poll";
+        containerEl.innerHTML = `<p style="color: var(--danger);">${err.message}</p>`;
+      }
+    }
+
+    // Submit Vote
+    async function submitVote(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('vote-error-box');
+      const pollId = document.getElementById('voting-poll-id').value;
+      const selectedOption = document.querySelector('input[name="choice"]:checked');
+
+      if (!selectedOption) {
+        errBox.textContent = "Please select an option before voting.";
+        errBox.style.display = 'block';
+        return;
+      }
+
+      errBox.style.display = 'none';
+      const submitBtn = document.getElementById('btn-submit-vote');
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Recording vote...";
+
+      const formData = new FormData();
+      formData.append('choice', selectedOption.value);
+      formData.append('csrfmiddlewaretoken', getCSRFToken());
+
+      try {
+        const res = await fetch(`/polls/api/polls/${pollId}/vote/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCSRFToken(),
+          },
+          body: formData
+        });
+
+        const data = await res.json();
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Cast Vote Now";
+
+        if (res.ok && data.status === 'success') {
+          showToast(data.message);
+          renderResults(data);
+          switchTab('results');
+        } else {
+          errBox.textContent = data.message || "Failed to record vote.";
+          errBox.style.display = 'block';
+        }
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Cast Vote Now";
+        errBox.textContent = "Network error while voting. Please try again.";
+        errBox.style.display = 'block';
+      }
+    }
+
+    // Load and Show Results for a Poll
+    async function loadAndShowResults(pollId) {
+      currentPollId = pollId;
+      switchTab('results');
+      
+      const titleEl = document.getElementById('results-question-title');
+      const metaEl = document.getElementById('results-question-meta');
+      const containerEl = document.getElementById('results-bars-container');
+
+      titleEl.textContent = "Loading results...";
+      metaEl.textContent = "";
+      containerEl.innerHTML = "<p style='color: var(--text-muted);'>Fetching real-time results...</p>";
+
+      try {
+        const res = await fetch(`/polls/api/polls/${pollId}/`);
+        if (!res.ok) throw new Error("Could not load poll results.");
+        const poll = await res.json();
+        cachedPollData = poll;
+        renderResults(poll);
+      } catch (err) {
+        titleEl.textContent = "Error loading results";
+        containerEl.innerHTML = `<p style="color: var(--danger);">${err.message}</p>`;
+      }
+    }
+
+    function renderResults(data) {
+      const titleEl = document.getElementById('results-question-title');
+      const metaEl = document.getElementById('results-question-meta');
+      const containerEl = document.getElementById('results-bars-container');
+
+      if (data.question_text) titleEl.textContent = data.question_text;
+      else if (cachedPollData) titleEl.textContent = cachedPollData.question_text;
+
+      metaEl.innerHTML = `Total Votes Cast: <strong>${data.total_votes}</strong> • Updated in real-time`;
+
+      let html = '';
+      data.choices.forEach(c => {
+        const pct = c.percentage;
+        const width = pct > 0 ? pct : 2;
+        html += `
+          <div class="result-row">
+            <div class="result-info">
+              <span>${c.text}</span>
+              <span><strong>${c.votes}</strong> votes (${pct}%)</span>
+            </div>
+            <div class="result-bar-bg">
+              <div class="result-bar-fill" style="width: ${width}%;">
+                ${pct >= 10 ? pct + '%' : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      containerEl.innerHTML = html;
+    }
+
+    function viewCurrentPollResults() {
+      if (currentPollId) loadAndShowResults(currentPollId);
+      else switchTab('explore');
+    }
+
+    function voteAgainFromResults() {
+      if (currentPollId) loadAndVotePoll(currentPollId);
+      else switchTab('explore');
+    }
+
+    function refreshCurrentResults() {
+      if (currentPollId) loadAndShowResults(currentPollId);
+    }
+
+    // Submit New Poll
+    async function submitNewPoll(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('create-error-box');
+      errBox.style.display = 'none';
+
+      const qText = document.getElementById('new-question-text').value.trim();
+      const c1 = document.getElementById('new-choice-1').value.trim();
+      const c2 = document.getElementById('new-choice-2').value.trim();
+      const c3 = document.getElementById('new-choice-3').value.trim();
+      const c4 = document.getElementById('new-choice-4').value.trim();
+      const c5 = document.getElementById('new-choice-5').value.trim();
+      const isActive = document.getElementById('new-is-active').checked;
+
+      const btn = document.getElementById('btn-publish-poll');
+      btn.disabled = true;
+      btn.textContent = "Publishing poll...";
+
+      const formData = new FormData();
+      formData.append('question_text', qText);
+      formData.append('choice_1', c1);
+      formData.append('choice_2', c2);
+      if (c3) formData.append('choice_3', c3);
+      if (c4) formData.append('choice_4', c4);
+      if (c5) formData.append('choice_5', c5);
+      formData.append('is_active', isActive ? 'on' : '');
+      formData.append('csrfmiddlewaretoken', getCSRFToken());
+
+      try {
+        const res = await fetch('/polls/api/polls/create/', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCSRFToken(),
+          },
+          body: formData
+        });
+        const data = await res.json();
+        btn.disabled = false;
+        btn.textContent = "Publish Poll Now";
+
+        if (res.ok && data.status === 'success') {
+          showToast(data.message);
+          document.getElementById('single-app-create-form').reset();
+          // Prepend newly created poll into explore list
+          const listContainer = document.getElementById('polls-list-container');
+          const p = data.poll;
+          const li = document.createElement('li');
+          li.className = 'poll-item';
+          li.setAttribute('data-question-id', p.id);
+          li.setAttribute('data-status', p.is_active ? 'active' : 'closed');
+          li.setAttribute('data-text', p.question_text.toLowerCase());
+          li.innerHTML = `
+            <div style="flex: 1; padding-right: 1.5rem;">
+              <a href="javascript:void(0)" onclick="loadAndVotePoll(${p.id})" class="poll-item-title">
+                ${p.question_text}
+              </a>
+              <div class="poll-meta">
+                <span>Published Today</span> &bull;
+                <span>${p.choices.length} choices</span> &bull;
+                <span><strong>0</strong> total votes</span>
+                <span class="badge badge-recent">New</span>
+                <span class="badge badge-active">Open</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button onclick="loadAndVotePoll(${p.id})" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Vote</button>
+              <button onclick="loadAndShowResults(${p.id})" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Results</button>
+            </div>
+          `;
+          listContainer.prepend(li);
+
+          // Update stats count
+          const statsCount = document.getElementById('stats-total-polls');
+          if (statsCount) statsCount.textContent = parseInt(statsCount.textContent || 0) + 1;
+
+          // Switch directly to vote on the new poll
+          loadAndVotePoll(p.id);
+        } else {
+          errBox.textContent = data.message || "Failed to create poll.";
+          errBox.style.display = 'block';
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = "Publish Poll Now";
+        errBox.textContent = "An error occurred while creating the poll.";
+        errBox.style.display = 'block';
+      }
+    }
+
+    // Initialize initial tab on load or hash
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (['explore', 'vote', 'results', 'create', 'analytics'].includes(hash)) {
+        switchTab(hash);
+      } else {
+        switchTab('explore');
+      }
+
+      // Pre-select first active question for vote and results tabs
+      const firstItem = document.querySelector('.poll-item[data-question-id]');
+      if (firstItem) {
+        const id = firstItem.getAttribute('data-question-id');
+        currentPollId = id;
+      }
+    });
+  </script>
+
+</body>
+</html>
