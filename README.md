@@ -1,6 +1,7 @@
 # 🗳️ PollMaster: Full-Stack Django Polling Web Application
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-TryCloudflare-success?style=for-the-badge&logo=cloudflare)](https://computers-mattress-documented-enhancements.trycloudflare.com/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-TryCloudflare-success?style=for-the-badge&logo=cloudflare)](https://films-functions-hey-cocktail.trycloudflare.com/)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yashuraghuvanshi4-pixel/django-polls-app)
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/yashuraghuvanshi4-pixel/django-polls-app)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![Django 6.1](https://img.shields.io/badge/Django-6.1-green?style=for-the-badge&logo=django)](https://djangoproject.com/)
@@ -10,9 +11,10 @@ A production-grade, cleanly structured Polling and Voting application designed a
 ---
 
 ## 🚀 Live Links
-- **Active Live Link**: [Open PollMaster](https://computers-mattress-documented-enhancements.trycloudflare.com/)
-- **1-Click 24/7 Cloud Deploy**: [Deploy to Render](https://render.com/deploy?repo=https://github.com/yashuraghuvanshi4-pixel/django-polls-app)
-- **Admin Portal**: [Admin Login](https://computers-mattress-documented-enhancements.trycloudflare.com/admin/) *(Username: `admin` / Password: `adminpassword123`)*
+- **Active Live Link**: [Open PollMaster Web App](https://films-functions-hey-cocktail.trycloudflare.com/)
+- **Deploy to Vercel**: [1-Click Vercel Deploy](https://vercel.com/new/clone?repository-url=https://github.com/yashuraghuvanshi4-pixel/django-polls-app)
+- **Deploy to Render**: [1-Click Render Deploy](https://render.com/deploy?repo=https://github.com/yashuraghuvanshi4-pixel/django-polls-app)
+- **Admin Portal**: [Admin Login](https://films-functions-hey-cocktail.trycloudflare.com/admin/) *(Username: `admin` / Password: `adminpassword123`)*
 
 ---
 
