@@ -9,3 +9,4 @@ venv/
 ENV/
 *.sqlite3-journal
 .DS_Store
+docs/code_html/
